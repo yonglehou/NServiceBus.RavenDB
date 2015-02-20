@@ -5,15 +5,17 @@
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
-    using Logging;
+    using NServiceBus.Logging;
     using NServiceBus.Persistence;
+    using NServiceBus.Settings;
     using Raven.Client;
     using Raven.Client.Document;
     using Raven.Json.Linq;
-    using Settings;
 
     class Helpers
     {
+        static readonly ILog Logger = LogManager.GetLogger(typeof(RavenDBPersistence));
+
         public static IDocumentStore CreateDocumentStoreByConnectionStringName(ReadOnlySettings settings, params string[] connectionStringNames)
         {
             var connectionStringName = GetFirstNonEmptyConnectionString(connectionStringNames);
@@ -34,17 +36,20 @@
             return null;
         }
 
-        public static IDocumentStore CreateDocumentStoreByUrl(ReadOnlySettings settings,string url)
+        public static IDocumentStore CreateDocumentStoreByUrl(ReadOnlySettings settings, string url)
         {
-            var docStore = new DocumentStore{Url = url};
+            var docStore = new DocumentStore
+            {
+                Url = url
+            };
 
             if (docStore.DefaultDatabase == null)
             {
                 docStore.DefaultDatabase = settings.EndpointName();
             }
-            
+
             ApplyRavenDBConventions(settings, docStore);
-            
+
             return docStore.Initialize();
         }
 
@@ -81,8 +86,6 @@
             }
         }
 
-        static readonly ILog Logger = LogManager.GetLogger(typeof(RavenDBPersistence));
-
         static string GetFirstNonEmptyConnectionString(params string[] connectionStringNames)
         {
             try
@@ -96,7 +99,7 @@
         }
 
         /// <summary>
-        /// Apply the NServiceBus conventions to a <see cref="DocumentStore"/> .
+        ///     Apply the NServiceBus conventions to a <see cref="DocumentStore" /> .
         /// </summary>
         public static void ApplyRavenDBConventions(ReadOnlySettings settings, IDocumentStore documentStore)
         {
